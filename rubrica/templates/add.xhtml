@@ -1,0 +1,14 @@
+<html py:extends="master.xhtml" py:strip="True">
+    <head py:block="head" py:strip="True">
+        <title py:block="master_title">Aggiungi Contatto</title>
+    </head>
+    <body py:block="body" py:strip="True">
+        <div class="main_content">
+            <form id='form1' action="/save" method="post">
+                <input type="name" name="name" value="name"/>
+                <input type="phone" name="phone" value="phone"/>
+                <input type="submit" name="submit" value="Save"/>
+            </form>
+        </div>
+    </body>
+</html>

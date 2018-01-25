@@ -1,0 +1,27 @@
+<html py:extends="master.xhtml" py:strip="True">
+    <head py:block="head" py:strip="True">
+        <title py:block="master_title">Rubrica</title>
+    </head>
+    <body py:block="body" py:strip="True">
+      <div class="main_content">
+        <div>
+            <div>${grid.display(value = data)}</div>
+            <div>${tmpl_context.paginators.data.pager()}</div>
+        </div>
+      </div>
+        <p>
+          <button onclick="location.href='/add'">Aggiungi contatto</button>
+        </p>
+        <p>
+          <button onclick="location.href='/esponi'">JSON</button>
+        </p>
+        <p>
+          <button onclick="location.href='/download'">Download</button>
+        </p>
+
+    </body>
+</html>
+
+
+
+
