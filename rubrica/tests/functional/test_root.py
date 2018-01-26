@@ -80,11 +80,15 @@ class TestRootController(TestController):
     def test_delete(self):
         """Testa delete contatto"""
         environ = {'REMOTE_USER': 'manager'}
+<<<<<<< HEAD
         resp = self.app.post('/save', extra_environ=environ, status=200)
         form = resp.form
         form['nome'] = 'manager'
         form['telefono'] = '123456'
         form.submit(extra_environ=environ)
+=======
+        self.app.get('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
+>>>>>>> acc77c272eceab7caa6e4e81c73b1c2e910de632
         contatti = DBSession.query(Contatto).all()
         last = contatti[-1]
         self.app.get('/delete?item_id={}'.format(last.id), extra_environ=environ, status=302)
@@ -130,4 +134,9 @@ class TestRootController(TestController):
     def test_secc_with_anonymous(self):
         """Anonymous users must not access the secure controller"""
         self.app.get('/secc', status=401)
+<<<<<<< HEAD
         #It's enough to know that authorization was denied with a 401 status
+=======
+        # It's enough to know that authorization was denied with a 401 status
+    
+>>>>>>> acc77c272eceab7caa6e4e81c73b1c2e910de632
