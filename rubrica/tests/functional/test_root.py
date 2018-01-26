@@ -67,7 +67,7 @@ class TestRootController(TestController):
     def test_delete(self):
         """Testa delete contatto"""
         environ = {'REMOTE_USER': 'manager'}
-        self.app.post('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
+        self.app.get('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
         contatti = DBSession.query(Contatto).all()
         last = contatti[-1]
         self.app.get('/delete?item_id={}'.format(last.id), extra_environ=environ, status=302)
