@@ -36,10 +36,14 @@ class TestRootController(TestController):
         environ = {'REMOTE_USER': 'manager'}
         self.app.get('/add', extra_environ=environ, status=200)
 
-    def test_save(self):#bruttini
+    def test_save(self):
         """Testa il save dei contatti"""
         environ = {'REMOTE_USER': 'manager'}
-        self.app.get('/save?name=Test&phone=8989898989', extra_environ=environ, status=200)
+        self.app.post('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
+        contatti = DBSession.query(Contatto).all()
+        last = contatti[-1]
+        eq_(last.name, 'Test')
+        eq_(last.phone, '89898989')
         "Testa input errato"
         environ = {'REMOTE_USER': 'manager'}
         self.app.get('/save?name=99&phone=phone', extra_environ=environ, status=200)
@@ -62,11 +66,17 @@ class TestRootController(TestController):
 
     def test_delete(self):
         """Testa delete contatto"""
-        contatto1 = DBSession.query(Contatto).first()
         environ = {'REMOTE_USER': 'manager'}
-        self.app.post('/delete?item_id={}'.format(contatto1.id), extra_environ=environ, status=302)
-        contatto2 = DBSession.query(Contatto).first()
-        ok_(contatto1 != contatto2)
+        self.app.post('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
+        contatti = DBSession.query(Contatto).all()
+        last = contatti[-1]
+        self.app.get('/delete?item_id={}'.format(last.id), extra_environ=environ, status=302)
+        contatti = DBSession.query(Contatto).all()
+        contatto2 = contatti[-1]
+        ok_(last != contatto2)
+
+        resp = self.app.post('/delete?item_id=999', extra_environ=environ, status=302)
+        ok_('Set-Cookie:', 'Il contatto(cucchiaio) non esiste' in resp.headers)
 
     def test_environ(self):
         """Displaying the wsgi environ works"""

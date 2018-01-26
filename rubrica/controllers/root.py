@@ -131,9 +131,13 @@ class RootController(BaseController):
     @validate({"item_id": validators.Int(not_empty=True)})
     def delete(self, item_id):
         """Elimina contatto"""
-        if not DBSession.query(exists().where(Contatto.id==item_id)).scalar():#probabilmente anche per questo check avrei potuto usare un validator
+        if not DBSession.query(exists().where(Contatto.id == item_id)).scalar():
             flash(_("Il contatto(cucchiaio) non esiste"))
             redirect('/index')
+        if request.identity['user'] != DBSession.query(Contatto).get(item_id).owner:
+            flash(_("Impossibile eliminare questo contatto"))
+            redirect('/index')
+
         contatto = DBSession.query(Contatto).get(item_id)
         DBSession.delete(contatto)
         redirect('/index')
