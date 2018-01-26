@@ -132,7 +132,7 @@ class RootController(BaseController):
     def delete(self, item_id):
         """Elimina contatto"""
         if not DBSession.query(exists().where(Contatto.id == item_id)).scalar():
-            flash(_("Il contatto(cucchiaio) non esiste"))
+            flash(_("Il contatto non esiste"))
             redirect('/index')
         if request.identity['user'] != DBSession.query(Contatto).get(item_id).owner:
             flash(_("Impossibile eliminare questo contatto"))

@@ -39,14 +39,20 @@ class TestRootController(TestController):
     def test_save(self):
         """Testa il save dei contatti"""
         environ = {'REMOTE_USER': 'manager'}
-        self.app.post('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
+        resp = self.app.post('/save', extra_environ=environ, status=200)
+        form = resp.form
+        form['nome'] = 'manager'
+        form['telefono'] = '123456'
+        form.submit(extra_environ=environ)
+
         contatti = DBSession.query(Contatto).all()
         last = contatti[-1]
-        eq_(last.name, 'Test')
-        eq_(last.phone, '89898989')
+        eq_(last.name, 'manager')
+        eq_(last.phone, '123456')
+
         "Testa input errato"
-        environ = {'REMOTE_USER': 'manager'}
-        self.app.get('/save?name=99&phone=phone', extra_environ=environ, status=200)
+        #environ = {'REMOTE_USER': 'manager'}
+        #self.app.get('/save?name=99&phone=phone', extra_environ=environ, status=200)
 
     def test_esponi(self):
         """Testa se il response di esponi è corretto"""
@@ -67,7 +73,11 @@ class TestRootController(TestController):
     def test_delete(self):
         """Testa delete contatto"""
         environ = {'REMOTE_USER': 'manager'}
-        self.app.post('/save?nome=Test&telefono=89898989', extra_environ=environ, status=302)
+        resp = self.app.post('/save', extra_environ=environ, status=200)
+        form = resp.form
+        form['nome'] = 'manager'
+        form['telefono'] = '123456'
+        form.submit(extra_environ=environ)
         contatti = DBSession.query(Contatto).all()
         last = contatti[-1]
         self.app.get('/delete?item_id={}'.format(last.id), extra_environ=environ, status=302)
@@ -76,7 +86,7 @@ class TestRootController(TestController):
         ok_(last != contatto2)
 
         resp = self.app.post('/delete?item_id=999', extra_environ=environ, status=302)
-        ok_('Set-Cookie:', 'Il contatto(cucchiaio) non esiste' in resp.headers)
+        ok_('Set-Cookie:', 'Il contatto non esiste' in resp.headers)
 
     def test_environ(self):
         """Displaying the wsgi environ works"""
