@@ -2,10 +2,11 @@
 """Main Controller"""
 
 from tg import expose, flash, require, url, lurl
-from tg import request, redirect, tmpl_context, response
+from tg import request, redirect, tmpl_context, response, validate
 from tg.i18n import ugettext as _, lazy_ugettext as l_
 from tg.exceptions import HTTPFound
 from tg import predicates
+from tg.predicates import not_anonymous
 from rubrica import model
 from rubrica.controllers.secure import SecureController
 from rubrica.model import DBSession
@@ -15,24 +16,51 @@ from tgext.admin.controller import AdminController
 from rubrica.lib.base import BaseController
 from rubrica.controllers.error import ErrorController
 
+from sqlalchemy.sql import exists
+from sqlalchemy import asc, desc
+from formencode import validators
+from rubrica.controllers.submitForm import SubmitForm
 from rubrica.model.contatto import Contatto
 from tg.decorators import paginate
 from tw2.forms import DataGrid
+from tw2.forms.datagrid import Column
 from markupsafe import Markup
 
+class SortableColumn(Column):#può essere modificato per ordinare le colonne alfabeticamente, etc..
+    """Rende le colonne della grid 'ordinabili'"""
+    def __init__(self, title, name):
+        super(SortableColumn, self).__init__(name)
+        self._title_ = title
+
+    def set_title(self, title):
+        self._title_ = title
+
+    def get_title(self):
+        current_ordering = request.GET.get('ordercol')
+        if current_ordering and current_ordering[1:] == self.name:
+            current_ordering = '-' if current_ordering[0] == '+' else '+'
+        else:
+            current_ordering = '+'
+        current_ordering += self.name
+
+        new_params = dict(request.GET)
+        new_params['ordercol'] = current_ordering
+
+        new_url = url(request.path_url, params=new_params)
+        return Markup('<a href="%(page_url)s">%(title)s</a>' % dict(page_url=new_url, title=self._title_))
+
+    title = property(get_title, set_title)
+
 tabella = DataGrid(fields=[
-    ('Name: ', 'name'),
-    ('Phone: ', 'phone'),
-    ('', lambda obj: Markup('<a href="%s" onclick="return confirm(\'Sei sicuro?\');">Delete</a>' % url('/delete', params=dict(item_id=obj.id))))
+    SortableColumn(Markup('<i class="glyphicon glyphicon-user"></i>'), 'name'),
+    SortableColumn(Markup('<i class="glyphicon glyphicon-earphone"></i>'), 'phone'),
+    ('', lambda obj: Markup('<a href="%s" onclick="return confirm(\'Sei sicuro?\');"><i class="glyphicon glyphicon-trash"</i></a>' % url('/delete', params=dict(item_id=obj.id))))
 ])
-
 __all__ = ['RootController']
-
 
 class RootController(BaseController):
     """
     The root controller for the rubrica application.
-
     All the other controllers and WSGI applications should be mounted on this
     controller. For example::
 
@@ -41,32 +69,40 @@ class RootController(BaseController):
 
     Keep in mind that WSGI applications shouldn't be mounted directly: They
     must be wrapped around with :class:`tg.controllers.WSGIAppController`.
-
     """
     secc = SecureController()
     admin = AdminController(model, DBSession, config_type=TGAdminConfig)
 
     error = ErrorController()
 
+    check = not_anonymous(msg='Solo gli utenti loggati possono accedere')
+
     def _before(self, *args, **kw):
         tmpl_context.project_name = "rubrica"
 
     @paginate("data", items_per_page=10)
-    @expose('rubrica.templates.index')
-    def index(self):
+    @expose('rubrica.templates.standard_index')
+    def index(self, **kw):
         """handle index page"""
         if not request.identity:
             redirect('/login')
         data = DBSession.query(Contatto).filter_by(owner=request.identity['user'].user_id)
+        ordering = kw.get('ordercol')
+        if ordering and ordering[0] == '+':
+            data = data.order_by(asc(ordering[1:]))
+        elif ordering and ordering[0] == '-':
+            data = data.order_by(desc(ordering[1:]))
         return dict(page='index', grid=tabella, data=data)
 
     @expose('json')
+    @require(check)
     def esponi(self):
         """Espone la rubrica in formato JSON"""
         data = DBSession.query(Contatto).filter_by(owner=request.identity['user'].user_id).all()
         return dict(data=data)
 
     @expose('json')
+    @require(check)
     def download(self):
         """Download della rubrica"""
         data = DBSession.query(Contatto).filter_by(owner=request.identity['user'].user_id).all()
@@ -74,25 +110,30 @@ class RootController(BaseController):
         response.headerlist.append(('Content-Disposition', 'attachment;filename=rubrica.json'))
         return dict(data=data)
 
-    @expose(template='rubrica.templates.add')
-    def add(self):
+    @expose('rubrica.templates.submitForm')
+    @require(check)
+    def add(self, **kw):
         """Aggiunge contatto"""
-        return dict(page='add')
+        return dict(page='add', form=SubmitForm)
 
     @expose()
-    def save(self, name, phone):
-        """Salva il contatto aggiunto con /add"""
-        if name and phone and name.isalpha() and phone.isdigit():
-            contatto = Contatto(name=name, phone=phone)
-            request.identity['user'].contacts.append(contatto)
-            DBSession.add(contatto)
-            redirect('/index')
-        else:
-            raise ValueError('Errore, il form deve essere compilato correttamente: name=[A-z], phone=[0-9]')
+    @require(check)
+    @validate(SubmitForm, error_handler=add)
+    def save(self, **kw):
+        """Salva il contatto aggiunto con add"""
+        contatto = Contatto(name=kw['nome'], phone=kw['telefono'])
+        request.identity['user'].contacts.append(contatto)
+        DBSession.add(contatto)
+        redirect('/index')
 
     @expose()
+    @require(check)
+    @validate({"item_id": validators.Int(not_empty=True)})
     def delete(self, item_id):
         """Elimina contatto"""
+        if not DBSession.query(exists().where(Contatto.id==item_id)).scalar():#probabilmente anche per questo check avrei potuto usare un validator
+            flash(_("Il contatto(cucchiaio) non esiste"))
+            redirect('/index')
         contatto = DBSession.query(Contatto).get(item_id)
         DBSession.delete(contatto)
         redirect('/index')

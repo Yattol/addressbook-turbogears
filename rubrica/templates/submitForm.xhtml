@@ -1,0 +1,27 @@
+
+<html py:extends="master.xhtml" py:strip="True">
+    <head py:block="head" py:strip="True">
+        <title py:block="master_title">Aggiungi Contatto</title>
+        <style>
+            h2{
+                color:#3c96e1;
+                font-size: 40px;
+                font-family:Cambria, Cochin, Georgia, Times, Times New Roman, serif 
+            }
+        </style>
+    </head>
+    <body py:block="body" py:strip="True">
+        <div class="row">
+            <div class="col-md-8">
+              <div class="jumbotron">
+                 <h2>Aggiungi un nuovo contatto</h2>
+                  <div id='submitForm'>
+                    ${form.display(value = dict(title = 'Inserisci i dati'))}
+                  </div>
+              </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+
