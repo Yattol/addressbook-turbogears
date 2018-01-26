@@ -51,8 +51,15 @@ class TestRootController(TestController):
         eq_(last.phone, '123456')
 
         "Testa input errato"
-        #environ = {'REMOTE_USER': 'manager'}
-        #self.app.get('/save?name=99&phone=phone', extra_environ=environ, status=200)
+        environ = {'REMOTE_USER': 'manager'}
+        resp = self.app.post('/save', extra_environ=environ, status=200)
+        form = resp.form
+        form['nome'] = '123'
+        form['telefono'] = 'abc'
+        form.submit(extra_environ=environ, status=200)
+        contatto = DBSession.query(Contatto).all()
+        last = contatto[-1]
+        ok_(last.name != '123')
 
     def test_esponi(self):
         """Testa se il response di esponi è corretto"""
@@ -123,5 +130,4 @@ class TestRootController(TestController):
     def test_secc_with_anonymous(self):
         """Anonymous users must not access the secure controller"""
         self.app.get('/secc', status=401)
-        # It's enough to know that authorization was denied with a 401 status
-    
+        #It's enough to know that authorization was denied with a 401 status
