@@ -134,13 +134,13 @@ class RootController(BaseController):
         if not DBSession.query(exists().where(Contatto.id == item_id)).scalar():
             flash(_("Il contatto non esiste"))
             redirect('/index')
-        if request.identity['user'] != DBSession.query(Contatto).get(item_id).owner:
-            flash(_("Impossibile eliminare questo contatto"))
+        if DBSession.query(Contatto).get(item_id) in request.identity['user'].contacts: 
+            contatto = DBSession.query(Contatto).get(item_id)
+            DBSession.delete(contatto)
             redirect('/index')
-
-        contatto = DBSession.query(Contatto).get(item_id)
-        DBSession.delete(contatto)
-        redirect('/index')
+        else:
+            flash(_("Non puoi eliminare questo contatto"))
+            redirect('/index')
 
     @expose('rubrica.templates.about')
     def about(self):
