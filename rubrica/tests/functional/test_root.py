@@ -95,6 +95,17 @@ class TestRootController(TestController):
         resp = self.app.post('/delete?item_id=999', extra_environ=environ, status=302)
         ok_('Set-Cookie:', 'Il contatto non esiste' in resp.headers)
 
+        resp = self.app.post('/save', extra_environ=environ, status=200)
+        form = resp.form
+        form['nome'] = 'manager'
+        form['telefono'] = '123456'
+        form.submit(extra_environ=environ)
+        contatti = DBSession.query(Contatto).all()
+        last = contatti[-1]
+        environ = {'REMOTE_USER': 'editor'}
+        resp = self.app.get('/delete?item_id={}'.format(last.id), extra_environ=environ, status=302)
+        ok_('Set-Cookie:', 'Non puoi eliminare questo contatto' in resp.headers)
+
     def test_environ(self):
         """Displaying the wsgi environ works"""
         response = self.app.get('/environ.html')
