@@ -1,30 +1,49 @@
 <html py:extends="master.xhtml" py:strip="True">
     <head py:block="head" py:strip="True">
-        <title py:block="master_title">Benvenuto nella tua rubrica</title>
-          <style> h1{ 
-                 color: #3c96e1;
-                 font-size: 50px;
-                 font-family:Cambria, Cochin, Georgia, Times, Times New Roman, serif 
-                 }
-                 .grid{
-                   font-size: 14px;
-                 }
-                 tr{
-                   background-color:paleturquoise
-                 }
-          </style>
+      <title py:block="master_title">Benvenuto nella tua rubrica</title>
+      <style>
+        h1{
+          color: #3c96e1;
+          font-size: 50px;
+          font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
+        }
+        table {
+          font-family: "Lato","sans-serif";
+          font-size: 16px;
+        }
+        table.one {
+          margin-bottom: 3em;
+          border-collapse:collapse;
+        }
+        td {
+          text-align: center;
+          width: 10em;
+          padding: 1em;
+        }
+        th {
+          text-align: center;
+          padding: 1em;
+          background-color: lightskyblue;
+          color: white;
+        }
+        tr {
+          height: 1em;
+        }
+        table tr:nth-child(even) {
+          background-color: #eee;
+        }
+        table tr:nth-child(odd) {
+          background-color:#fff;
+        }
+      </style>
     </head>
     <body py:block="body" py:strip="True">
       <div class="row">
         <div class="col-md-8">
             <h1>Rubrica</h1>
-          <div class="jumbotron">
-            <div>
-                <div>${grid.display(value = data)}</div>
+                <div>${grid.display(value=data, template='rubrica.templates.datagrid')}</div>
                 <div>${tmpl_context.paginators.data.pager()}</div>
-            </div>
-            <a class="btn btn-info btn-sm active" href="/add">${h.icon('plus')} Aggiungi Contatto</a>
-          </div>
+              <a class="btn btn-info btn-sm active" href="/add">${h.icon('plus')} Aggiungi Contatto</a>
         </div>
         <div class="col-md-4 hidden-xs hidden-sm">
           <a class="btn btn-info btn-sm active" href="/download">${h.icon('download-alt')} Download</a><em> Scarica la rubrica nel tuo computer</em> <br/>
